@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocket Game v2 Test - Health & Points</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .game-textarea {
+            width: 100%;
+            height: 200px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        
+        .instructions {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .feature-item h4 {
+            margin: 0 0 5px 0;
+            color: #007bff;
+        }
+        
+        .feature-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Rocket Text Game v2 - Health & Points System</h1>
+        
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <ul>
+                <li><strong>Click</strong> in any textarea below to activate rocket mode</li>
+                <li><strong>Arrow Keys:</strong> Up (accelerate), Down (brake), Left/Right (turn)</li>
+                <li><strong>Safe Flight:</strong> Fly through spaces, tabs, and newlines to recover health</li>
+                <li><strong>Avoid Letters:</strong> Hitting letters causes damage and blinking effect</li>
+                <li><strong>Points:</strong> Earn points for safe flight time while moving</li>
+                <li><strong>Escape:</strong> Press ESC to exit rocket mode</li>
+            </ul>
+        </div>
+        
+        <div class="feature-list">
+            <div class="feature-item">
+                <h4>Health System</h4>
+                <p>100% health that decreases on letter collision and recovers when flying safely</p>
+            </div>
+            <div class="feature-item">
+                <h4>Blinking Effect</h4>
+                <p>Rocket blinks when health drops below 30% as a warning</p>
+            </div>
+            <div class="feature-item">
+                <h4>Points System</h4>
+                <p>Earn points for safe flight time, displayed above the rocket</p>
+            </div>
+            <div class="feature-item">
+                <h4>Safe Spaces</h4>
+                <p>Spaces, tabs, and newlines are safe to fly through</p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test 1: Basic Text Editor</h2>
+            <p>Try flying through the spaces between words:</p>
+            <textarea class="game-textarea" data-rocket-game id="test1">
+Hello world! This is a test text area.
+Try flying through the spaces between words.
+The rocket should be safe in empty spaces.
+            </textarea>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test 2: Code Editor</h2>
+            <p>Fly through the indentation and spaces in this code:</p>
+            <textarea class="game-textarea" data-rocket-game id="test2">
+function calculateSum(numbers) {
+    let total = 0;
+    for (let num of numbers) {
+        total += num;
+    }
+    return total;
+}
+
+const result = calculateSum([1, 2, 3, 4, 5]);
+console.log(result);
+            </textarea>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test 3: Empty Editor</h2>
+            <p>Start with an empty editor and type as you fly:</p>
+            <textarea class="game-textarea" data-rocket-game id="test3" placeholder="Start typing here..."></textarea>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test 4: Dense Text</h2>
+            <p>Navigate through dense text with minimal safe spaces:</p>
+            <textarea class="game-textarea" data-rocket-game id="test4">
+Loremipsumdolorsitametconsecteturadipiscingelit
+Seddoeiusmodtemporincididuntutlaboreetdoloremagna
+Utenimadminimveniamquisnostrudexercitationullamco
+            </textarea>
+        </div>
+    </div>
+    
+    <script src="rocket-game-embed-v2.js"></script>
+    <script>
+        // Manual initialization examples
+        console.log('Rocket Game v2 loaded');
+        
+        // You can also initialize manually:
+        // const game1 = RocketTextGameV2.init('test1');
+        // const game2 = RocketTextGameV2.init('test2');
+    </script>
+</body>
+</html>

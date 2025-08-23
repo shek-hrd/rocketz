@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocket Text Game v2 - Health & Points</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .text-frame {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border: 2px solid #333;
+            background-color: white;
+            overflow: hidden;
+            cursor: text;
+        }
+        
+        .text-editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            resize: none;
+            box-sizing: border-box;
+            background: transparent;
+            white-space: pre;
+            overflow: auto;
+        }
+        
+        .rocket {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            transition: none;
+            z-index: 10;
+        }
+        
+        .rocket::before {
+            content: '▲';
+            display: block;
+            font-size: 20px;
+            color: #ff4444;
+            text-align: center;
+            line-height: 20px;
+            transform-origin: center;
+        }
+        
+        .rocket.blinking {
+            animation: blink 0.3s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background-color: rgba(200, 200, 200, 0.8);
+            padding: 5px;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            color: #333;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        .info-panel div {
+            margin: 2px 0;
+        }
+        
+        .health-bar {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 100px;
+            height: 10px;
+            background-color: rgba(200, 200, 200, 0.5);
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 20;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        
+        .points-display {
+            position: absolute;
+            color: #2196F3;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 15;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .damage-text {
+            position: absolute;
+            color: #ff4444;
+            font-weight: bold;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 25;
+            animation: fadeUp 1s forwards;
+        }
+        
+        @keyframes fadeUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Rocket Text Game v2 - Health & Points</h1>
+        <p>Click in the text area to activate rocket mode. Fly through spaces and tabs safely, avoid letters!</p>
+        
+        <div class="text-frame" id="gameFrame">
+            <textarea class="text-editor" id="textEditor" placeholder="Start typing..."></textarea>
+            <div class="rocket hidden" id="rocket"></div>
+            <div class="health-bar hidden" id="healthBar">
+                <div class="health-fill" id="healthFill"></div>
+            </div>
+            <div class="info-panel" id="infoPanel">
+                <div>Frame: <span id="frameSize">0x0</span></div>
+                <div>Mouse: <span id="mousePos">0,0</span></div>
+                <div>Rocket: <span id="rocketPos">0,0</span></div>
+                <div>Speed: <span id="rocketSpeed">0</span></div>
+                <div>Angle: <span id="rocketAngle">0°</span></div>
+                <div>Health: <span id="healthDisplay">100%</span></div>
+                <div>Points: <span id="pointsDisplay">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RocketTextGameV2 {
+            constructor() {
+                this.gameFrame = document.getElementById('gameFrame');
+                this.textEditor = document.getElementById('textEditor');
+                this.rocket = document.getElementById('rocket');
+                this.infoPanel = document.getElementById('infoPanel');
+                this.healthBar = document.getElementById('healthBar');
+                this.healthFill = document.getElementById('healthFill');
+                
+                this.rocketMode = false;
+                this.rocketX = 0;
+                this.rocketY = 0;
+                this.rocketSpeed = 0;
+                this.rocketAngle = 0;
+                this.maxSpeed = 5;
+                
+                this.health = 100;
+                this.maxHealth = 100;
+                this.points = 0;
+                this.safeFlightTime = 0;
+                this.lastSafeTime = 0;
+                
+                this.keys = {
+                    ArrowUp: false,
+                    ArrowDown: false,
+                    ArrowLeft: false,
+                    ArrowRight: false
+                };
+                
+                this.animationId = null;
+                this.blinkingTimeout = null;
+                this.pointsDisplay = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.textEditor.focus();
+                
+                this.gameFrame.addEventListener('click', (e) => this.handleFrameClick(e));
+                document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                document.addEventListener('keyup', (e) => this.handleKeyUp(e));
+                this.gameFrame.addEventListener('mousemove', (e) => this.updateMouseInfo(e));
+                
+                this.updateFrameInfo();
+                window.addEventListener('resize', () => this.updateFrameInfo());
+                
+                // Create points display
+                this.createPointsDisplay();
+            }
+            
+            createPointsDisplay() {
+                this.pointsDisplay = document.createElement('div');
+                this.pointsDisplay.className = 'points-display hidden';
+                this.gameFrame.appendChild(this.pointsDisplay);
+            }
+            
+            handleFrameClick(e) {
+                if (!this.rocketMode) {
+                    this.activateRocketMode(e);
+                } else {
+                    this.updateRocketPosition(e);
+                }
+            }
+            
+            activateRocketMode(e) {
+                this.rocketMode = true;
+                this.textEditor.blur();
+                this.rocket.classList.remove('hidden');
+                this.healthBar.classList.remove('hidden');
+                this.pointsDisplay.classList.remove('hidden');
+                
+                this.health = 100;
+                this.points = 0;
+                this.safeFlightTime = 0;
+                this.lastSafeTime = Date.now();
+                
+                this.updateRocketPosition(e);
+                this.updateHealthDisplay();
+                this.startGameLoop();
+            }
+            
+            deactivateRocketMode() {
+                this.rocketMode = false;
+                this.rocket.classList.add('hidden');
+                this.healthBar.classList.add('hidden');
+                this.pointsDisplay.classList.add('hidden');
+                this.stopGameLoop();
+                this.textEditor.focus();
+                
+                if (this.blinkingTimeout) {
+                    clearTimeout(this.blinkingTimeout);
+                    this.blinkingTimeout = null;
+                }
+                
+                this.rocket.classList.remove('blinking');
+            }
+            
+            updateRocketPosition(e) {
+                const rect = this.gameFrame.getBoundingClientRect();
+                this.rocketX = e.clientX - rect.left;
+                this.rocketY = e.clientY - rect.top;
+                this.updateRocketDisplay();
+            }
+            
+            handleKeyDown(e) {
+                if (this.rocketMode && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    this.keys[e.key] = true;
+                }
+            }
+            
+            handleKeyUp(e) {
+                if (this.rocketMode && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    this.keys[e.key] = false;
+                }
+                
+                if (e.key === 'Escape' && this.rocketMode) {
+                    this.deactivateRocketMode();
+                }
+            }
+            
+            startGameLoop() {
+                if (!this.animationId) {
+                    this.gameLoop();
+                }
+            }
+            
+            stopGameLoop() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+            }
+            
+            gameLoop() {
+                this.updateRocket();
+                this.checkTextCollision();
+                this.updatePoints();
+                this.updateRocketDisplay();
+                this.updateInfoPanel();
+                this.updatePointsDisplay();
+                
+                this.animationId = requestAnimationFrame(() => this.gameLoop());
+            }
+            
+            updateRocket() {
+                if (this.keys.ArrowLeft) {
+                    this.rocketAngle = (this.rocketAngle - 5 + 360) % 360;
+                }
+                if (this.keys.ArrowRight) {
+                    this.rocketAngle = (this.rocketAngle + 5) % 360;
+                }
+                
+                if (this.keys.ArrowUp) {
+                    this.rocketSpeed = Math.min(this.rocketSpeed + 0.2, this.maxSpeed);
+                }
+                if (this.keys.ArrowDown) {
+                    this.rocketSpeed = Math.max(this.rocketSpeed - 0.2, 0);
+                }
+                
+                const radians = (this.rocketAngle - 90) * Math.PI / 180;
+                const deltaX = Math.cos(radians) * this.rocketSpeed;
+                const deltaY = Math.sin(radians) * this.rocketSpeed;
+                
+                const rect = this.gameFrame.getBoundingClientRect();
+                this.rocketX = (this.rocketX + deltaX + rect.width) % rect.width;
+                this.rocketY = (this.rocketY + deltaY + rect.height) % rect.height;
+            }
+            
+            checkTextCollision() {
+                if (!this.rocketMode) return;
+                
+                const text = this.textEditor.value;
+                if (!text) return;
+                
+                // Get character position under rocket
+                const charPos = this.getCharPositionAt(this.rocketX, this.rocketY);
+                if (charPos === null) return;
+                
+                const char = text[charPos];
+                
+                // Safe characters: spaces and tabs
+                const isSafe = char === ' ' || char === '\t' || char === '\n';
+                
+                if (isSafe) {
+                    // Recover health when flying safely
+                    this.health = Math.min(this.health + 0.5, this.maxHealth);
+                    this.updateHealthDisplay();
+                } else {
+                    // Take damage when hitting letters
+                    this.takeDamage(2);
+                }
+            }
+            
+            getCharPositionAt(x, y) {
+                const textarea = this.textEditor;
+                const rect = textarea.getBoundingClientRect();
+                const frameRect = this.gameFrame.getBoundingClientRect();
+                
+                // Calculate relative position within textarea
+                const relX = x - (rect.left - frameRect.left);
+                const relY = y - (rect.top - frameRect.top);
+                
+                // Get textarea metrics
+                const style = window.getComputedStyle(textarea);
+                const fontSize = parseInt(style.fontSize);
+                const lineHeight = fontSize * 1.4; // Approximate line height
+                const charWidth = fontSize * 0.6; // Approximate char width
+                
+                const col = Math.floor(relX / charWidth);
+                const row = Math.floor(relY / lineHeight);
+                
+                // Get text lines
+                const lines = textarea.value.split('\n');
+                if (row >= lines.length) return null;
+                
+                const line = lines[row];
+                if (col >= line.length) return null;
+                
+                // Calculate absolute character position
+                let charPos = 0;
+                for (let i = 0; i < row; i++) {
+                    charPos += lines[i].length + 1; // +1 for newline
+                }
+                charPos += col;
+                
+                return charPos;
+            }
+            
+            takeDamage(amount) {
+                this.health -= amount;
+                this.updateHealthDisplay();
+                
+                // Show damage effect
+                this.showDamageText(amount);
+                
+                // Start blinking if health is low
+                if (this.health <= 30 && !this.rocket.classList.contains('blinking')) {
+                    this.rocket.classList.add('blinking');
+                }
+                
+                if (this.health <= 0) {
+                    this.deactivateRocketMode();
+                }
+            }
+            
+            showDamageText(damage) {
+                const damageEl = document.createElement('div');
+                damageEl.className = 'damage-text';
+                damageEl.textContent = `-${damage}`;
+                damageEl.style.left = `${this.rocketX}px`;
+                damageEl.style.top = `${this.rocketY - 20}px`;
+                
+                this.gameFrame.appendChild(damageEl);
+                
+                setTimeout(() => {
+                    if (damageEl.parentNode) {
+                        damageEl.parentNode.removeChild(damageEl);
+                    }
+                }, 1000);
+            }
+            
+            updatePoints() {
+                if (this.rocketSpeed > 0) {
+                    this.safeFlightTime += 16; // ~16ms per frame at 60fps
+                    this.points = Math.floor(this.safeFlightTime / 100);
+                }
+            }
+            
+            updateHealthDisplay() {
+                this.healthFill.style.width = `${this.health}%`;
+                
+                // Change color based on health
+                if (this.health > 60) {
+                    this.healthFill.style.backgroundColor = '#4CAF50';
+                } else if (this.health > 30) {
+                    this.healthFill.style.backgroundColor = '#FF9800';
+                } else {
+                    this.healthFill.style.backgroundColor = '#F44336';
+                }
+            }
+            
+            updateRocketDisplay() {
+                this.rocket.style.left = `${this.rocketX - 10}px`;
+                this.rocket.style.top = `${this.rocketY - 10}px`;
+                this.rocket.style.transform = `rotate(${this.rocketAngle}deg)`;
+            }
+            
+            updatePointsDisplay() {
+                this.pointsDisplay.textContent = this.points;
+                
+                // Position points above rocket with distance based on speed
+                const distance = 30 + (this.rocketSpeed * 10);
+                const radians = (this.rocketAngle - 90) * Math.PI / 180;
+                const offsetX = Math.cos(radians) * -distance;
+                const offsetY = Math.sin(radians) * -distance;
+                
+                this.pointsDisplay.style.left = `${this.rocketX + offsetX - 10}px`;
+                this.pointsDisplay.style.top = `${this.rocketY + offsetY - 10}px`;
+            }
+            
+            updateFrameInfo() {
+                const rect = this.gameFrame.getBoundingClientRect();
+                document.getElementById('frameSize').textContent = `${Math.round(rect.width)}x${Math.round(rect.height)}`;
+            }
+            
+            updateMouseInfo(e) {
+                if (this.rocketMode) {
+                    const rect = this.gameFrame.getBoundingClientRect();
+                    const x = Math.round(e.clientX - rect.left);
+                    const y = Math.round(e.clientY - rect.top);
+                    document.getElementById('mousePos').textContent = `${x},${y}`;
+                }
+            }
+            
+            updateInfoPanel() {
+                document.getElementById('rocketPos').textContent = `${Math.round(this.rocketX)},${Math.round(this.rocketY)}`;
+                document.getElementById('rocketSpeed').textContent = this.rocketSpeed.toFixed(1);
+                document.getElementById('rocketAngle').textContent = `${this.rocketAngle}°`;
+                document.getElementById('healthDisplay').textContent = `${Math.round(this.health)}%`;
+                document.getElementById('pointsDisplay').textContent = this.points;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            new RocketTextGameV2();
+        });
+    </script>
+</body>
+</html>
