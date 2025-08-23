@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Text Editor Game</title>
+<style>
+  #editor {
+    width: 400px;
+    height: 300px;
+    border: 1px solid #000;
+    position: relative;
+    overflow: hidden;
+    outline: none;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: monospace;
+  }
+  #arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 20px solid red;
+    transform-origin: center bottom;
+  }
+</style>
+</head>
+<body>
+<div id="editor" contenteditable="true" autofocus></div>
+<div id="arrow"></div>
+
+<script>
+  const editor = document.getElementById('editor');
+  const arrow = document.getElementById('arrow');
+  let arrowX = 0;
+  let arrowY = 0;
+  let arrowSpeed = 0;
+  let arrowDirection = 0; // 0 = down, 1 = right, 2 = up, 3 = left
+
+  editor.addEventListener('click', (e) => {
+    const rect = editor.getBoundingClientRect();
+    arrowX = e.clientX - rect.left;
+    arrowY = e.clientY - rect.top;
+    arrow.style.left = `${arrowX - 10}px`; // arrow width is 20px, so center it
+    arrow.style.top = `${arrowY - 20}px`; // arrow height is 20px, so center it
+    arrowDirection = 2; // start pointing up
+    updateArrowOrientation();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    switch (e.key) {
+      case 'ArrowUp':
+        if (arrowSpeed < 10) arrowSpeed++;
+        break;
+      case 'ArrowDown':
+        arrowSpeed = 0;
+        break;
+      case 'ArrowRight':
+        arrowDirection = (arrowDirection + 1) % 4;
+        break;
+      case 'ArrowLeft':
+        arrowDirection = (arrowDirection + 3) % 4;
+        break;
+    }
+  });
+
+  function updateArrowOrientation() {
+    switch (arrowDirection) {
+      case 0: // down
+        arrow.style.transform = 'rotate(0deg)';
+        break;
+      case 1: // right
+        arrow.style.transform = 'rotate(90deg)';
+        break;
+      case 2: // up
+        arrow.style.transform = 'rotate(180deg)';
+        break;
+      case 3: // left
+        arrow.style.transform = 'rotate(-90deg)';
+        break;
+    }
+  }
+
+  function moveArrow() {
+    const editorRect = editor.getBoundingClientRect();
+    const arrowRect = arrow.getBoundingClientRect();
+    const arrowCenterX = arrowRect.left + arrowRect.width / 2 - editorRect.left;
+    const arrowCenterY = arrowRect.top + arrowRect.height / 2 - editorRect.top;
+
+    switch (arrowDirection) {
+      case 0: // down
+        arrowY += arrowSpeed;
+        if (arrowY > editorRect.height) arrowY = 0;
+        break;
+      case 1: // right
+        arrowX += arrowSpeed;
+        if (arrowX > editorRect.width) arrowX = 0;
+        break;
+      case 2: // up
+        arrowY -= arrowSpeed;
+        if (arrowY < 0) arrowY = editorRect.height;
+        break;
+      case 3: // left
+        arrowX -= arrowSpeed;
+        if (arrowX < 0) arrowX = editorRect.width;
+        break;
+    }
+
+    arrow.style.left = `${arrowX - 10}px`;
+    arrow.style.top = `${arrowY - 20}px`;
+  }
+
+  setInterval(moveArrow, 100);
+  setInterval(updateArrowOrientation, 100);
+</script>
+</body>
+</html>
