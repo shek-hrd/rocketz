@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocket Text Game v3 - Enhanced Features</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .game-section {
+            margin: 20px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .game-textarea {
+            width: 100%;
+            height: 300px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            resize: vertical;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .feature-item {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .feature-item h4 {
+            margin: 0 0 5px 0;
+            color: #1976d2;
+        }
+        
+        .feature-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Rocket Text Game v3 - Enhanced Features</h1>
+        
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <ul>
+                <li><strong>Click</strong> on the text area to activate rocket mode</li>
+                <li><strong>Arrow Keys</strong> to control the rocket (up/down for speed, left/right for rotation)</li>
+                <li><strong>Escape</strong> to exit rocket mode</li>
+                <li><strong>Type normally</strong> - arrow keys won't interfere with typing when not in rocket mode</li>
+            </ul>
+        </div>
+        
+        <div class="game-section">
+            <h2>Game Area</h2>
+            <textarea id="game-textarea" class="game-textarea" data-rocket-game>
+Welcome to Rocket Text Game v3!
+
+This enhanced version includes all the new features:
+
+🎯 Speed Scaling: Your maximum speed increases with points earned
+💪 Health System: Rocket opacity reflects health - watch it fade as you take damage
+🔄 Text Wrapping: Seamless wrapping both horizontally and vertically
+⌨️ Typing Friendly: Type normally while playing - arrow keys only work in rocket mode
+📊 Dynamic Display: Points display adjusts based on acceleration/deceleration
+
+Try flying through the spaces and avoiding the letters. 
+The rocket gets faster as you earn more points!
+Watch your health bar and rocket opacity carefully.
+
+Safe flight through spaces, tabs, and newlines.
+Collision with letters reduces health.
+
+The quick brown fox jumps over the lazy dog.
+Pack my box with five dozen liquor jugs.
+Amazingly few discotheques provide jukeboxes.
+Heavy boxes perform quick waltzes and jigs.
+A wizard's job is to vex chumps quickly in fog.
+Watch Jeopardy, Alex Trebek's fun TV quiz game.
+By Jove, my quick study of lexicography won a prize.
+Five or six big jet planes zoomed quickly by the tower.
+The job requires extra pluck and zeal from every wage earner.
+Grumpy wizards make toxic brew for the evil queen and jack.
+            </textarea>
+        </div>
+        
+        <div class="feature-list">
+            <div class="feature-item">
+                <h4>🚀 Speed Scaling</h4>
+                <p>Maximum speed increases by 0.5 for every 10 points earned, up to a cap of 10</p>
+            </div>
+            
+            <div class="feature-item">
+                <h4>💔 Health as Opacity</h4>
+                <p>Rocket becomes more transparent as health decreases, with flashing at critical levels</p>
+            </div>
+            
+            <div class="feature-item">
+                <h4>🔄 Text Wrapping</h4>
+                <p>Seamless wrapping both horizontally and vertically when rocket reaches edges</p>
+            </div>
+            
+            <div class="feature-item">
+                <h4>⌨️ Typing Friendly</h4>
+                <p>Arrow keys only control rocket when in rocket mode - normal typing unaffected</p>
+            </div>
+            
+            <div class="feature-item">
+                <h4>📊 Dynamic Display</h4>
+                <p>Points display adjusts position based on acceleration/deceleration patterns</p>
+            </div>
+            
+            <div class="feature-item">
+                <h4>🎮 Enhanced Controls</h4>
+                <p>Rocket never fully stops (minimum speed 0.5) and responds to acceleration states</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="rocket-game-embed-v3.js"></script>
+    <script>
+        // Initialize the game
+        const game = RocketTextGameV3.init('game-textarea');
+        
+        // Optional: Add some demo text
+        document.getElementById('game-textarea').addEventListener('focus', function() {
+            if (this.value.trim() === '') {
+                this.value = 'Start typing here...';
+            }
+        });
+    </script>
+</body>
+</html>
