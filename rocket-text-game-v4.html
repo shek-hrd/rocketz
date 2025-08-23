@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocket Text Game v4 - Simplified Design</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .game-textarea {
+            width: 100%;
+            height: 400px;
+            border: none;
+            outline: none;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            padding: 20px;
+            box-sizing: border-box;
+            resize: none;
+            background: transparent;
+            position: relative;
+            z-index: 1;
+            white-space: pre-wrap;
+            overflow: auto;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        
+        .rocket {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            transition: none;
+            z-index: 10;
+            display: none;
+        }
+        
+        .rocket-symbol {
+            font-size: 20px;
+            color: #ff4444;
+            text-align: center;
+            line-height: 20px;
+            transform-origin: center;
+        }
+        
+        .stats {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #888;
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.8), -1px -1px 1px rgba(0,0,0,0.1);
+            z-index: 15;
+            background: transparent;
+            padding: 5px;
+            line-height: 1.4;
+        }
+        
+        .clock {
+            position: absolute;
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 15;
+            display: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .instructions {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+            color: #6c757d;
+        }
+        
+        .game-container.rocket-mode .game-textarea {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <textarea class="game-textarea" id="gameTextarea" placeholder="Click here to start the game...">
+🚀 Rocket Text Game v4 - Simplified Design
+
+This version returns to the classic design with enhanced features:
+
+📍 COORDINATES & STATS
+Real-time position, speed, and max speed displayed in the bottom-right corner.
+
+⏱️ DYNAMIC CLOCK
+When stopped, clock appears above rocket center. When moving, it drags behind based on acceleration.
+
+🎯 SIMPLE CONTROLS
+Click to activate, arrow keys to control, escape to exit.
+
+🔄 TEXT WRAPPING
+Seamless wrapping in all directions.
+
+The quick brown fox jumps over the lazy dog. Amazingly few discotheques provide jukeboxes for wizards who make toxic brew for evil queens and jacks. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump! Sphinx of black quartz, judge my vow. Two driven jocks help fax my big quiz. Five quacking zephyrs jolt my wax bed. The five boxing wizards jump quickly. Sympathizing would fix Quaker objectives. Many big jackdaws quickly zipped over the fox pen.
+        </textarea>
+        
+        <div class="rocket" id="rocket">
+            <div class="rocket-symbol">▲</div>
+        </div>
+        
+        <div class="stats" id="stats">
+            X: 0, Y: 0<br>
+            Speed: 0.0<br>
+            Max: 3.0
+        </div>
+        
+        <div class="clock" id="clock">0</div>
+        
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <ul>
+                <li><strong>Click</strong> on the text area to activate rocket mode</li>
+                <li><strong>Arrow Keys:</strong> Up/Down for speed, Left/Right for rotation</li>
+                <li><strong>Escape</strong> to exit rocket mode</li>
+                <li><strong>Clock:</strong> Stays above rocket when stopped, drags behind when moving</li>
+                <li><strong>Goal:</strong> Navigate through text while avoiding letters</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        class RocketTextGameV4 {
+            constructor() {
+                this.container = document.getElementById('gameContainer');
+                this.textarea = document.getElementById('gameTextarea');
+                this.rocket = document.getElementById('rocket');
+                this.stats = document.getElementById('stats');
+                this.clock = document.getElementById('clock');
+                
+                this.rocketMode = false;
+                this.rocketX = 0;
+                this.rocketY = 0;
+                this.rocketSpeed = 0;
+                this.rocketAngle = 0;
+                this.maxSpeed = 3;
+                
+                this.points = 0;
+                this.safeFlightTime = 0;
+                
+                this.keys = {
+                    ArrowUp: false,
+                    ArrowDown: false,
+                    ArrowLeft: false,
+                    ArrowRight: false
+                };
+                
+                this.animationId = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                this.textarea.addEventListener('click', (e) => this.handleClick(e));
+                document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                document.addEventListener('keyup', (e) => this.handleKeyUp(e));
+            }
+            
+            handleClick(e) {
+                if (!this.rocketMode) {
+                    this.activateRocketMode(e);
+                } else {
+                    this.updateRocketPosition(e);
+                }
+            }
+            
+            activateRocketMode(e) {
+                this.rocketMode = true;
+                this.container.classList.add('rocket-mode');
+                this.rocket.style.display = 'block';
+                
+                this.rocketSpeed = 0;
+                this.points = 0;
+                this.safeFlightTime = 0;
+                
+                this.updateRocketPosition(e);
+                this.startGameLoop();
+            }
+            
+            deactivateRocketMode() {
+                this.rocketMode = false;
+                this.container.classList.remove('rocket-mode');
+                this.rocket.style.display = 'none';
+                this.clock.style.display = 'none';
+                this.stopGameLoop();
+            }
+            
+            updateRocketPosition(e) {
+                const rect = this.textarea.getBoundingClientRect();
+                this.rocketX = e.clientX - rect.left;
+                this.rocketY = e.clientY - rect.top;
+                this.updateRocketDisplay();
+            }
+            
+            handleKeyDown(e) {
+                if (this.rocketMode && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    this.keys[e.key] = true;
+                }
+            }
+            
+            handleKeyUp(e) {
+                if (this.rocketMode && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    this.keys[e.key] = false;
+                }
+                
+                if (e.key === 'Escape' && this.rocketMode) {
+                    this.deactivateRocketMode();
+                }
+            }
+            
+            startGameLoop() {
+                if (!this.animationId) {
+                    this.gameLoop();
+                }
+            }
+            
+            stopGameLoop() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+            }
+            
+            gameLoop() {
+                this.updateRocket();
+                this.checkTextCollision();
+                this.updatePoints();
+                this.updateRocketDisplay();
+                this.updateStats();
+                this.updateClock();
+                
+                this.animationId = requestAnimationFrame(() => this.gameLoop());
+            }
+            
+            updateRocket() {
+                if (this.keys.ArrowLeft) {
+                    this.rocketAngle = (this.rocketAngle - 5 + 360) % 360;
+                }
+                if (this.keys.ArrowRight) {
+                    this.rocketAngle = (this.rocketAngle + 5) % 360;
+                }
+                
+                if (this.keys.ArrowUp) {
+                    this.rocketSpeed = Math.min(this.rocketSpeed + 0.2, this.maxSpeed);
+                }
+                if (this.keys.ArrowDown) {
+                    this.rocketSpeed = Math.max(this.rocketSpeed - 0.2, 0);
+                }
+                
+                const radians = (this.rocketAngle - 90) * Math.PI / 180;
+                const deltaX = Math.cos(radians) * this.rocketSpeed;
+                const deltaY = Math.sin(radians) * this.rocketSpeed;
+                
+                const rect = this.textarea.getBoundingClientRect();
+                
+                let newX = this.rocketX + deltaX;
+                let newY = this.rocketY + deltaY;
+                
+                if (newX < 0) {
+                    newX = rect.width - 20;
+                } else if (newX > rect.width) {
+                    newX = 0;
+                }
+                
+                if (newY < 0) {
+                    newY = rect.height - 20;
+                } else if (newY > rect.height) {
+                    newY = 0;
+                }
+                
+                this.rocketX = newX;
+                this.rocketY = newY;
+            }
+            
+            checkTextCollision() {
+                if (!this.rocketMode) return;
+                
+                const text = this.textarea.value;
+                if (!text) return;
+                
+                const charPos = this.getCharPositionAt(this.rocketX, this.rocketY);
+                if (charPos === null) return;
+                
+                const char = text[charPos];
+                const isSafe = char === ' ' || char === '\t' || char === '\n';
+                
+                if (!isSafe) {
+                    this.deactivateRocketMode();
+                }
+            }
+            
+            getCharPositionAt(x, y) {
+                const rect = this.textarea.getBoundingClientRect();
+                
+                const style = window.getComputedStyle(this.textarea);
+                const fontSize = parseInt(style.fontSize);
+                const lineHeight = fontSize * 1.4;
+                const charWidth = fontSize * 0.6;
+                
+                const col = Math.floor(x / charWidth);
+                const row = Math.floor(y / lineHeight);
+                
+                const lines = this.textarea.value.split('\n');
+                if (row >= lines.length) return null;
+                
+                const line = lines[row];
+                if (col >= line.length) return null;
+                
+                let charPos = 0;
+                for (let i = 0; i < row; i++) {
+                    charPos += lines[i].length + 1;
+                }
+                charPos += col;
+                
+                return charPos;
+            }
+            
+            updatePoints() {
+                if (this.rocketSpeed > 0) {
+                    this.safeFlightTime += 16;
+                    this.points = Math.floor(this.safeFlightTime / 100);
+                } else {
+                    this.points = 0;
+                    this.safeFlightTime = 0;
+                }
+            }
+            
+            updateRocketDisplay() {
+                this.rocket.style.left = `${this.rocketX - 10}px`;
+                this.rocket.style.top = `${this.rocketY - 10}px`;
+                this.rocket.querySelector('.rocket-symbol').style.transform = `rotate(${this.rocketAngle}deg)`;
+            }
+            
+            updateStats() {
+                this.stats.innerHTML = `X: ${Math.round(this.rocketX)}, Y: ${Math.round(this.rocketY)}<br>Speed: ${this.rocketSpeed.toFixed(1)}<br>Max: ${this.maxSpeed.toFixed(1)}`;
+            }
+            
+            updateClock() {
+                if (this.rocketSpeed === 0) {
+                    this.clock.style.display = 'block';
+                    this.clock.style.left = `${this.rocketX - 10}px`;
+                    this.clock.style.top = `${this.rocketY - 30}px`;
+                } else {
+                    const dragDistance = this.rocketSpeed * 20;
+                    const radians = (this.rocketAngle - 90) * Math.PI / 180;
+                    const offsetX = Math.cos(radians) * -dragDistance;
+                    const offsetY = Math.sin(radians) * -dragDistance;
+                    
+                    this.clock.style.left = `${this.rocketX + offsetX - 10}px`;
+                    this.clock.style.top = `${this.rocketY + offsetY - 10}px`;
+                }
+                
+                this.clock.textContent = this.points;
+            }
+        }
+        
+        // Initialize the game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new RocketTextGameV4();
+        });
+    </script>
+</body>
+</html>
