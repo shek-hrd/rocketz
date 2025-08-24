@@ -305,22 +305,18 @@
                 
                 const rect = this.gameFrame.getBoundingClientRect();
                 
-                // Calculate new positions
+                // Calculate new positions with robust wrapping
                 let newX = this.rocketX + deltaX;
                 let newY = this.rocketY + deltaY;
                 
-                // Handle wrapping for both X and Y coordinates
-                if (newX < 0) {
-                    newX = rect.width + newX;
-                } else if (newX >= rect.width) {
-                    newX = newX - rect.width;
-                }
+                // Ensure rocket stays within bounds using modulo for consistent wrapping
+                // Use rect.width and rect.height as the actual frame dimensions
+                const width = Math.max(1, rect.width);
+                const height = Math.max(1, rect.height);
                 
-                if (newY < 0) {
-                    newY = rect.height + newY;
-                } else if (newY >= rect.height) {
-                    newY = newY - rect.height;
-                }
+                // Robust wrapping that handles all edge cases
+                newX = ((newX % width) + width) % width;
+                newY = ((newY % height) + height) % height;
                 
                 this.rocketX = newX;
                 this.rocketY = newY;
