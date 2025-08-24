@@ -504,12 +504,12 @@
                 const offsetX = Math.cos(radians) * -distance + verticalOffset * Math.sin(radians);
                 const offsetY = Math.sin(radians) * -distance - verticalOffset * Math.cos(radians);
                 
-                // Allow points to continue smoothly without jumping at boundaries
-                let displayX = this.rocketX + offsetX - 10;
-                let displayY = this.rocketY + offsetY - 10;
+                // Use continuous coordinates to prevent jumping at boundaries
+                const useX = this.continuousX !== undefined ? this.continuousX : this.rocketX;
+                const useY = this.continuousY !== undefined ? this.continuousY : this.rocketY;
                 
-                this.pointsDisplay.style.left = `${displayX}px`;
-                this.pointsDisplay.style.top = `${displayY}px`;
+                this.pointsDisplay.style.left = `${useX + offsetX - 10}px`;
+                this.pointsDisplay.style.top = `${useY + offsetY - 10}px`;
             }
             
             updateFrameInfo() {
