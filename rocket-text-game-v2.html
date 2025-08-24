@@ -75,14 +75,15 @@
             position: absolute;
             bottom: 5px;
             right: 5px;
-            background-color: rgba(200, 200, 200, 0.8);
+            background: none;
             padding: 5px;
             font-size: 11px;
             font-family: 'Courier New', monospace;
-            color: #333;
+            color: #888;
             border-radius: 3px;
             pointer-events: none;
             z-index: 20;
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.8), -1px -1px 1px rgba(0,0,0,0.3);
         }
         
         .info-panel div {
@@ -91,13 +92,14 @@
         
         .points-display {
             position: absolute;
-            color: #2196F3;
+            color: #666;
             font-weight: bold;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             pointer-events: none;
             z-index: 15;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.8), -1px -1px 1px rgba(0,0,0,0.3);
+            transition: all 0.3s ease-out;
         }
         
         .hidden {
@@ -218,6 +220,10 @@
                 this.updateRocketPosition(e);
                 this.updateHealthDisplay();
                 this.startGameLoop();
+                
+                // Initialize points display above rocket
+                this.pointsDisplay.style.left = `${this.rocketX - 10}px`;
+                this.pointsDisplay.style.top = `${this.rocketY - 35}px`;
             }
             
             deactivateRocketMode() {
@@ -474,11 +480,25 @@
             updatePointsDisplay() {
                 this.pointsDisplay.textContent = this.points;
                 
-                // Position points above rocket with distance based on speed
-                const distance = 30 + (this.rocketSpeed * 10);
+                // Calculate dynamic distance based on acceleration state
+                let distance;
+                let verticalOffset = 0;
+                
+                if (this.keys.ArrowUp) {
+                    // Accelerating - points get dragged behind
+                    distance = 40 + (this.rocketSpeed * 15);
+                } else if (this.rocketSpeed > 0) {
+                    // Decelerating - points return closer to rocket
+                    distance = 20 + (this.rocketSpeed * 8);
+                } else {
+                    // Stopped - points rest above rocket
+                    distance = 25;
+                    verticalOffset = -5;
+                }
+                
                 const radians = (this.rocketAngle - 90) * Math.PI / 180;
-                const offsetX = Math.cos(radians) * -distance;
-                const offsetY = Math.sin(radians) * -distance;
+                const offsetX = Math.cos(radians) * -distance + verticalOffset * Math.sin(radians);
+                const offsetY = Math.sin(radians) * -distance - verticalOffset * Math.cos(radians);
                 
                 this.pointsDisplay.style.left = `${this.rocketX + offsetX - 10}px`;
                 this.pointsDisplay.style.top = `${this.rocketY + offsetY - 10}px`;
