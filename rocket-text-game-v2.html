@@ -304,8 +304,26 @@
                 const deltaY = Math.sin(radians) * this.rocketSpeed;
                 
                 const rect = this.gameFrame.getBoundingClientRect();
-                this.rocketX = (this.rocketX + deltaX + rect.width) % rect.width;
-                this.rocketY = (this.rocketY + deltaY + rect.height) % rect.height;
+                
+                // Calculate new positions
+                let newX = this.rocketX + deltaX;
+                let newY = this.rocketY + deltaY;
+                
+                // Handle wrapping for both X and Y coordinates
+                if (newX < 0) {
+                    newX = rect.width + newX;
+                } else if (newX >= rect.width) {
+                    newX = newX - rect.width;
+                }
+                
+                if (newY < 0) {
+                    newY = rect.height + newY;
+                } else if (newY >= rect.height) {
+                    newY = newY - rect.height;
+                }
+                
+                this.rocketX = newX;
+                this.rocketY = newY;
             }
             
             checkTextCollision() {
