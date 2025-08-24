@@ -305,18 +305,30 @@
                 
                 const rect = this.gameFrame.getBoundingClientRect();
                 
-                // Calculate new positions with robust wrapping
+                // Calculate new positions with continuous wrapping
                 let newX = this.rocketX + deltaX;
                 let newY = this.rocketY + deltaY;
                 
-                // Ensure rocket stays within bounds using modulo for consistent wrapping
-                // Use rect.width and rect.height as the actual frame dimensions
+                // Use actual frame dimensions
                 const width = Math.max(1, rect.width);
                 const height = Math.max(1, rect.height);
                 
-                // Robust wrapping that handles all edge cases
-                newX = ((newX % width) + width) % width;
-                newY = ((newY % height) + height) % height;
+                // Simple wrapping - when rocket goes off one side, appear on the other
+                if (newX < 0) {
+                    newX = width + newX; // Add instead of modulo to handle negative values
+                } else if (newX >= width) {
+                    newX = newX - width;
+                }
+                
+                if (newY < 0) {
+                    newY = height + newY; // Add instead of modulo to handle negative values
+                } else if (newY >= height) {
+                    newY = newY - height;
+                }
+                
+                // Ensure values are within bounds
+                newX = Math.max(0, Math.min(width - 1, newX));
+                newY = Math.max(0, Math.min(height - 1, newY));
                 
                 this.rocketX = newX;
                 this.rocketY = newY;
@@ -326,15 +338,34 @@
                 if (!this.rocketMode) return;
                 
                 const text = this.textEditor.value;
-                if (!text) return;
+                if (!text) {
+                    // Empty text area is completely safe
+                    this.health = Math.min(this.health + 0.5, this.maxHealth);
+                    this.updateHealthDisplay();
+                    return;
+                }
                 
                 // Get character position under rocket
                 const charPos = this.getCharPositionAt(this.rocketX, this.rocketY);
-                if (charPos === null) return;
+                
+                if (charPos === null) {
+                    // If no character at position (empty space or outside text), it's safe
+                    this.health = Math.min(this.health + 0.5, this.maxHealth);
+                    this.updateHealthDisplay();
+                    return;
+                }
+                
+                // Ensure charPos is within bounds
+                if (charPos < 0 || charPos >= text.length) {
+                    // Out of bounds is safe
+                    this.health = Math.min(this.health + 0.5, this.maxHealth);
+                    this.updateHealthDisplay();
+                    return;
+                }
                 
                 const char = text[charPos];
                 
-                // Safe characters: spaces and tabs
+                // Safe characters: spaces, tabs, and newlines
                 const isSafe = char === ' ' || char === '\t' || char === '\n';
                 
                 if (isSafe) {
@@ -367,10 +398,17 @@
                 
                 // Get text lines
                 const lines = textarea.value.split('\n');
-                if (row >= lines.length) return null;
+                
+                // Handle edge cases where rocket is outside text area
+                if (row < 0 || row >= lines.length || col < 0) {
+                    return null;
+                }
                 
                 const line = lines[row];
-                if (col >= line.length) return null;
+                if (col >= line.length) {
+                    // If beyond text, treat as safe space
+                    return null;
+                }
                 
                 // Calculate absolute character position
                 let charPos = 0;
