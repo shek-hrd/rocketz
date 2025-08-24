@@ -319,6 +319,10 @@
                 const width = Math.max(1, rect.width);
                 const height = Math.max(1, rect.height);
                 
+                // Store continuous position for smooth points display
+                this.continuousX = (this.continuousX || this.rocketX) + deltaX;
+                this.continuousY = (this.continuousY || this.rocketY) + deltaY;
+                
                 // Simple wrapping - when rocket goes off one side, appear on the other
                 if (newX < 0) {
                     newX = width + newX; // Add instead of modulo to handle negative values
@@ -500,8 +504,12 @@
                 const offsetX = Math.cos(radians) * -distance + verticalOffset * Math.sin(radians);
                 const offsetY = Math.sin(radians) * -distance - verticalOffset * Math.cos(radians);
                 
-                this.pointsDisplay.style.left = `${this.rocketX + offsetX - 10}px`;
-                this.pointsDisplay.style.top = `${this.rocketY + offsetY - 10}px`;
+                // Allow points to continue smoothly without jumping at boundaries
+                let displayX = this.rocketX + offsetX - 10;
+                let displayY = this.rocketY + offsetY - 10;
+                
+                this.pointsDisplay.style.left = `${displayX}px`;
+                this.pointsDisplay.style.top = `${displayY}px`;
             }
             
             updateFrameInfo() {
