@@ -90,18 +90,6 @@
             margin: 2px 0;
         }
         
-        .points-display {
-            position: absolute;
-            color: #666;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            pointer-events: none;
-            z-index: 15;
-            text-shadow: 1px 1px 1px rgba(255,255,255,0.8), -1px -1px 1px rgba(0,0,0,0.3);
-            transition: all 0.3s ease-out;
-        }
-        
         .hidden {
             display: none;
         }
@@ -172,7 +160,6 @@
                 
                 this.animationId = null;
                 this.blinkingTimeout = null;
-                this.pointsDisplay = null;
                 
                 this.init();
             }
@@ -187,15 +174,6 @@
                 
                 this.updateFrameInfo();
                 window.addEventListener('resize', () => this.updateFrameInfo());
-                
-                // Create points display
-                this.createPointsDisplay();
-            }
-            
-            createPointsDisplay() {
-                this.pointsDisplay = document.createElement('div');
-                this.pointsDisplay.className = 'points-display hidden';
-                this.gameFrame.appendChild(this.pointsDisplay);
             }
             
             handleFrameClick(e) {
@@ -210,7 +188,6 @@
                 this.rocketMode = true;
                 this.textEditor.blur();
                 this.rocket.classList.remove('hidden');
-                this.pointsDisplay.classList.remove('hidden');
                 
                 this.health = 100;
                 this.points = 0;
@@ -224,16 +201,11 @@
                 // Initialize continuous coordinates
                 this.continuousX = this.rocketX;
                 this.continuousY = this.rocketY;
-                
-                // Initialize points display directly above rocket
-                this.pointsDisplay.style.left = `${this.rocketX - 10}px`;
-                this.pointsDisplay.style.top = `${this.rocketY - 35}px`;
             }
             
             deactivateRocketMode() {
                 this.rocketMode = false;
                 this.rocket.classList.add('hidden');
-                this.pointsDisplay.classList.add('hidden');
                 this.stopGameLoop();
                 this.textEditor.focus();
                 
@@ -289,7 +261,6 @@
                 this.updatePoints();
                 this.updateRocketDisplay();
                 this.updateInfoPanel();
-                this.updatePointsDisplay();
                 
                 this.animationId = requestAnimationFrame(() => this.gameLoop());
             }
@@ -489,79 +460,6 @@
                 this.rocket.style.transform = `rotate(${this.rocketAngle}deg)`;
             }
             
-            updatePointsDisplay() {
-                this.pointsDisplay.textContent = this.points;
-                
-                // Ensure continuous coordinates are maintained
-                if (this.continuousX === undefined) this.continuousX = this.rocketX;
-                if (this.continuousY === undefined) this.continuousY = this.rocketY;
-                
-                // Calculate dynamic positioning based on rocket state
-                let distance;
-                let angleOffset = 0; // 0 degrees = directly above rocket
-                
-                if (this.keys.ArrowUp && this.rocketSpeed > 0) {
-                    // Accelerating - points get dragged behind rocket
-                    // Start at 0 degrees (above) and move to 180 degrees (behind) as speed increases
-                    const accelerationFactor = Math.min(this.rocketSpeed / this.maxSpeed, 1);
-                    angleOffset = 180 * accelerationFactor; // 0° to 180°
-                    distance = 30 + (this.rocketSpeed * 12); // Increase distance with speed
-                } else if (this.rocketSpeed > 0) {
-                    // Moving but not accelerating (coasting or decelerating)
-                    // Points stay at half-behind position (90 degrees)
-                    const coastingFactor = Math.min(this.rocketSpeed / this.maxSpeed, 1);
-                    angleOffset = 90 * coastingFactor; // 0° to 90°
-                    distance = 25 + (this.rocketSpeed * 8); // Moderate distance
-                } else {
-                    // Full stop - points rest directly above rocket
-                    angleOffset = 0; // Exactly above
-                    distance = 25; // Fixed distance above
-                }
-                
-                // Calculate position based on rocket's angle plus offset
-                const totalAngle = (this.rocketAngle - 90 + angleOffset) * Math.PI / 180;
-                const offsetX = Math.cos(totalAngle) * distance;
-                const offsetY = Math.sin(totalAngle) * distance;
-                
-                // Use continuous coordinates to prevent jumping at boundaries
-                // Ensure continuous coordinates stay within reasonable bounds
-                const frameRect = this.gameFrame.getBoundingClientRect();
-                const width = Math.max(1, frameRect.width);
-                const height = Math.max(1, frameRect.height);
-                
-                // Keep continuous coordinates updated even when wrapping
-                this.continuousX = this.continuousX || this.rocketX;
-                this.continuousY = this.continuousY || this.rocketY;
-                
-                // Handle boundary wrapping for continuous coordinates
-                if (Math.abs(this.continuousX - this.rocketX) > width / 2) {
-                    // We've wrapped around horizontally
-                    if (this.rocketX < width / 2 && this.continuousX > width / 2) {
-                        this.continuousX -= width;
-                    } else if (this.rocketX > width / 2 && this.continuousX < width / 2) {
-                        this.continuousX += width;
-                    }
-                }
-                
-                if (Math.abs(this.continuousY - this.rocketY) > height / 2) {
-                    // We've wrapped around vertically
-                    if (this.rocketY < height / 2 && this.continuousY > height / 2) {
-                        this.continuousY -= height;
-                    } else if (this.rocketY > height / 2 && this.continuousY < height / 2) {
-                        this.continuousY += height;
-                    }
-                }
-                
-                const useX = this.continuousX;
-                const useY = this.continuousY;
-                
-                // Position the timer display
-                this.pointsDisplay.style.left = `${useX + offsetX - 10}px`;
-                this.pointsDisplay.style.top = `${useY + offsetY - 10}px`;
-                
-                // Ensure display stays visible
-                this.pointsDisplay.style.display = 'block';
-            }
             
             updateFrameInfo() {
                 const rect = this.gameFrame.getBoundingClientRect();
