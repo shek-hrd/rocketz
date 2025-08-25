@@ -108,6 +108,33 @@
             0% { opacity: 1; transform: translateY(0); }
             100% { opacity: 0; transform: translateY(-20px); }
         }
+        
+        .timer-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            pointer-events: none;
+            z-index: 15;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.1s ease-out;
+        }
+        
+        .points-display {
+            position: absolute;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #0066cc;
+            pointer-events: none;
+            z-index: 12;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            transition: all 0.2s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -118,6 +145,8 @@
         <div class="text-frame" id="gameFrame">
             <textarea class="text-editor" id="textEditor" placeholder="Start typing..."></textarea>
             <div class="rocket hidden" id="rocket"></div>
+            <div class="timer-display hidden" id="timerDisplay">0:00</div>
+            <div class="points-display hidden" id="pointsDisplay">0</div>
             <div class="info-panel" id="infoPanel">
                 <div>Frame: <span id="frameSize">0x0</span></div>
                 <div>Mouse: <span id="mousePos">0,0</span></div>
