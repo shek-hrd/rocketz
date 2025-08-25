@@ -221,7 +221,7 @@
                 this.updateHealthDisplay();
                 this.startGameLoop();
                 
-                // Initialize points display above rocket
+                // Initialize points display directly above rocket
                 this.pointsDisplay.style.left = `${this.rocketX - 10}px`;
                 this.pointsDisplay.style.top = `${this.rocketY - 35}px`;
             }
@@ -484,30 +484,38 @@
             updatePointsDisplay() {
                 this.pointsDisplay.textContent = this.points;
                 
-                // Calculate dynamic distance based on acceleration state
+                // Calculate dynamic positioning based on rocket state
                 let distance;
-                let verticalOffset = 0;
+                let angleOffset = 0; // 0 degrees = directly above rocket
                 
                 if (this.keys.ArrowUp) {
-                    // Accelerating - points get dragged behind
-                    distance = 40 + (this.rocketSpeed * 15);
+                    // Accelerating - points get dragged behind rocket
+                    // Start at 0 degrees (above) and move to 180 degrees (behind) as speed increases
+                    const accelerationFactor = Math.min(this.rocketSpeed / this.maxSpeed, 1);
+                    angleOffset = 180 * accelerationFactor; // 0° to 180°
+                    distance = 30 + (this.rocketSpeed * 12); // Increase distance with speed
                 } else if (this.rocketSpeed > 0) {
-                    // Decelerating - points return closer to rocket
-                    distance = 20 + (this.rocketSpeed * 8);
+                    // Decelerating - points return toward above position
+                    // Gradually return from current angle back to 0 degrees (above)
+                    const decelerationFactor = this.rocketSpeed / this.maxSpeed;
+                    angleOffset = 180 * decelerationFactor; // 180° back to 0°
+                    distance = 20 + (this.rocketSpeed * 10); // Decrease distance as we slow
                 } else {
-                    // Stopped - points rest above rocket
-                    distance = 25;
-                    verticalOffset = -5;
+                    // Full stop - points rest directly above rocket
+                    angleOffset = 0; // Exactly above
+                    distance = 25; // Fixed distance above
                 }
                 
-                const radians = (this.rocketAngle - 90) * Math.PI / 180;
-                const offsetX = Math.cos(radians) * -distance + verticalOffset * Math.sin(radians);
-                const offsetY = Math.sin(radians) * -distance - verticalOffset * Math.cos(radians);
+                // Calculate position based on rocket's angle plus offset
+                const totalAngle = (this.rocketAngle - 90 + angleOffset) * Math.PI / 180;
+                const offsetX = Math.cos(totalAngle) * distance;
+                const offsetY = Math.sin(totalAngle) * distance;
                 
                 // Use continuous coordinates to prevent jumping at boundaries
                 const useX = this.continuousX !== undefined ? this.continuousX : this.rocketX;
                 const useY = this.continuousY !== undefined ? this.continuousY : this.rocketY;
                 
+                // Position the timer display
                 this.pointsDisplay.style.left = `${useX + offsetX - 10}px`;
                 this.pointsDisplay.style.top = `${useY + offsetY - 10}px`;
             }
@@ -539,5 +547,8 @@
             new RocketTextGameV2();
         });
     </script>
+    <div style="position: fixed; bottom: 10px; left: 10px; font-size: 10px; color: #999; font-family: Arial, sans-serif;">
+        Changes: Fixed timer positioning - now rests above rocket on full stop, drags behind during acceleration, and returns above during deceleration
+    </div>
 </body>
 </html>
