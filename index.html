@@ -221,6 +221,10 @@
                 this.updateHealthDisplay();
                 this.startGameLoop();
                 
+                // Initialize continuous coordinates
+                this.continuousX = this.rocketX;
+                this.continuousY = this.rocketY;
+                
                 // Initialize points display directly above rocket
                 this.pointsDisplay.style.left = `${this.rocketX - 10}px`;
                 this.pointsDisplay.style.top = `${this.rocketY - 35}px`;
@@ -319,9 +323,13 @@
                 const width = Math.max(1, rect.width);
                 const height = Math.max(1, rect.height);
                 
-                // Store continuous position for smooth points display
-                this.continuousX = (this.continuousX || this.rocketX) + deltaX;
-                this.continuousY = (this.continuousY || this.rocketY) + deltaY;
+                // Initialize continuous position if not set
+                if (this.continuousX === undefined) this.continuousX = this.rocketX;
+                if (this.continuousY === undefined) this.continuousY = this.rocketY;
+                
+                // Update continuous position (never wraps, keeps absolute position)
+                this.continuousX += deltaX;
+                this.continuousY += deltaY;
                 
                 // Simple wrapping - when rocket goes off one side, appear on the other
                 if (newX < 0) {
@@ -484,22 +492,26 @@
             updatePointsDisplay() {
                 this.pointsDisplay.textContent = this.points;
                 
+                // Ensure continuous coordinates are maintained
+                if (this.continuousX === undefined) this.continuousX = this.rocketX;
+                if (this.continuousY === undefined) this.continuousY = this.rocketY;
+                
                 // Calculate dynamic positioning based on rocket state
                 let distance;
                 let angleOffset = 0; // 0 degrees = directly above rocket
                 
-                if (this.keys.ArrowUp) {
+                if (this.keys.ArrowUp && this.rocketSpeed > 0) {
                     // Accelerating - points get dragged behind rocket
                     // Start at 0 degrees (above) and move to 180 degrees (behind) as speed increases
                     const accelerationFactor = Math.min(this.rocketSpeed / this.maxSpeed, 1);
                     angleOffset = 180 * accelerationFactor; // 0° to 180°
                     distance = 30 + (this.rocketSpeed * 12); // Increase distance with speed
                 } else if (this.rocketSpeed > 0) {
-                    // Decelerating - points return toward above position
-                    // Gradually return from current angle back to 0 degrees (above)
-                    const decelerationFactor = this.rocketSpeed / this.maxSpeed;
-                    angleOffset = 180 * decelerationFactor; // 180° back to 0°
-                    distance = 20 + (this.rocketSpeed * 10); // Decrease distance as we slow
+                    // Moving but not accelerating (coasting or decelerating)
+                    // Points stay at half-behind position (90 degrees)
+                    const coastingFactor = Math.min(this.rocketSpeed / this.maxSpeed, 1);
+                    angleOffset = 90 * coastingFactor; // 0° to 90°
+                    distance = 25 + (this.rocketSpeed * 8); // Moderate distance
                 } else {
                     // Full stop - points rest directly above rocket
                     angleOffset = 0; // Exactly above
@@ -512,12 +524,43 @@
                 const offsetY = Math.sin(totalAngle) * distance;
                 
                 // Use continuous coordinates to prevent jumping at boundaries
-                const useX = this.continuousX !== undefined ? this.continuousX : this.rocketX;
-                const useY = this.continuousY !== undefined ? this.continuousY : this.rocketY;
+                // Ensure continuous coordinates stay within reasonable bounds
+                const frameRect = this.gameFrame.getBoundingClientRect();
+                const width = Math.max(1, frameRect.width);
+                const height = Math.max(1, frameRect.height);
+                
+                // Keep continuous coordinates updated even when wrapping
+                this.continuousX = this.continuousX || this.rocketX;
+                this.continuousY = this.continuousY || this.rocketY;
+                
+                // Handle boundary wrapping for continuous coordinates
+                if (Math.abs(this.continuousX - this.rocketX) > width / 2) {
+                    // We've wrapped around horizontally
+                    if (this.rocketX < width / 2 && this.continuousX > width / 2) {
+                        this.continuousX -= width;
+                    } else if (this.rocketX > width / 2 && this.continuousX < width / 2) {
+                        this.continuousX += width;
+                    }
+                }
+                
+                if (Math.abs(this.continuousY - this.rocketY) > height / 2) {
+                    // We've wrapped around vertically
+                    if (this.rocketY < height / 2 && this.continuousY > height / 2) {
+                        this.continuousY -= height;
+                    } else if (this.rocketY > height / 2 && this.continuousY < height / 2) {
+                        this.continuousY += height;
+                    }
+                }
+                
+                const useX = this.continuousX;
+                const useY = this.continuousY;
                 
                 // Position the timer display
                 this.pointsDisplay.style.left = `${useX + offsetX - 10}px`;
                 this.pointsDisplay.style.top = `${useY + offsetY - 10}px`;
+                
+                // Ensure display stays visible
+                this.pointsDisplay.style.display = 'block';
             }
             
             updateFrameInfo() {
@@ -548,7 +591,7 @@
         });
     </script>
     <div style="position: fixed; bottom: 10px; left: 10px; font-size: 10px; color: #999; font-family: Arial, sans-serif;">
-        Changes: Fixed timer positioning - now rests above rocket on full stop, drags behind during acceleration, and returns above during deceleration
+        Changes: Fixed clock positioning - rests above rocket on full stop, drags half-behind when coasting, further behind when accelerating, returns above when stopping
     </div>
 </body>
 </html>
