@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rocket Text Game v2 - Health & Points</title>
+    <title>Rocketz </title>
     <style>
         body {
             margin: 0;
@@ -71,6 +71,23 @@
             51%, 100% { opacity: 0; }
         }
         
+        .clock {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            pointer-events: none;
+            z-index: 15;
+            transition: all 0.3s ease-out;
+        }
+        
+        .clock::before {
+            content: '🕐';
+            display: block;
+            font-size: 24px;
+            text-align: center;
+            line-height: 30px;
+        }
+        
         .info-panel {
             position: absolute;
             bottom: 5px;
@@ -118,6 +135,7 @@
         <div class="text-frame" id="gameFrame">
             <textarea class="text-editor" id="textEditor" placeholder="Start typing..."></textarea>
             <div class="rocket hidden" id="rocket"></div>
+            <div class="clock hidden" id="clock"></div>
             <div class="info-panel" id="infoPanel">
                 <div>Frame: <span id="frameSize">0x0</span></div>
                 <div>Mouse: <span id="mousePos">0,0</span></div>
@@ -137,6 +155,7 @@
                 this.textEditor = document.getElementById('textEditor');
                 this.rocket = document.getElementById('rocket');
                 this.infoPanel = document.getElementById('infoPanel');
+                this.clock = document.getElementById('clock');
                 
                 this.rocketMode = false;
                 this.rocketX = 0;
@@ -188,6 +207,7 @@
                 this.rocketMode = true;
                 this.textEditor.blur();
                 this.rocket.classList.remove('hidden');
+                this.clock.classList.remove('hidden');
                 
                 this.health = 100;
                 this.points = 0;
@@ -206,6 +226,7 @@
             deactivateRocketMode() {
                 this.rocketMode = false;
                 this.rocket.classList.add('hidden');
+                this.clock.classList.add('hidden');
                 this.stopGameLoop();
                 this.textEditor.focus();
                 
@@ -458,6 +479,29 @@
                 this.rocket.style.left = `${this.rocketX - 10}px`;
                 this.rocket.style.top = `${this.rocketY - 10}px`;
                 this.rocket.style.transform = `rotate(${this.rocketAngle}deg)`;
+                
+                // Clock positioning based on rocket movement state
+                const clockOffset = 25; // Base offset for clock positioning
+                const speedFactor = Math.min(this.rocketSpeed / this.maxSpeed, 1); // Normalized speed (0-1)
+                
+                let clockX, clockY;
+                
+                if (this.rocketSpeed === 0) {
+                    // Stopped: clock rests above rocket
+                    clockX = this.rocketX;
+                    clockY = this.rocketY - clockOffset;
+                } else {
+                    // Moving: clock positioned behind rocket based on speed
+                    const radians = (this.rocketAngle - 90) * Math.PI / 180;
+                    const distance = clockOffset * (1 + speedFactor * 0.5); // Varies from 25px to 37.5px
+                    
+                    // Position clock behind rocket (opposite direction of movement)
+                    clockX = this.rocketX - Math.cos(radians) * distance;
+                    clockY = this.rocketY - Math.sin(radians) * distance;
+                }
+                
+                this.clock.style.left = `${clockX - 15}px`; // Center clock (30px width)
+                this.clock.style.top = `${clockY - 15}px`;  // Center clock (30px height)
             }
             
             
