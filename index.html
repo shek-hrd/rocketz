@@ -109,18 +109,6 @@
             100% { opacity: 0; transform: translateY(-20px); }
         }
         
-        .timer-display {
-            position: absolute;
-            font-family: 'Courier New', monospace;
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            pointer-events: none;
-            z-index: 15;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            transition: none;
-        }
-        
         .points-display {
             position: absolute;
             font-family: 'Courier New', monospace;
@@ -142,7 +130,6 @@
         <div class="text-frame" id="gameFrame">
             <textarea class="text-editor" id="textEditor" placeholder="Start typing..."></textarea>
             <div class="rocket hidden" id="rocket"></div>
-            <div class="timer-display hidden" id="timerDisplay">0:00</div>
             <div class="points-display hidden" id="pointsDisplay">0</div>
             <div class="info-panel" id="infoPanel">
                 <div>Frame: <span id="frameSize">0x0</span></div>
@@ -189,12 +176,9 @@
                 this.animationId = null;
                 this.blinkingTimeout = null;
                 
-                // Drag effect variables
-                this.timerX = 0;
-                this.timerY = 0;
+                // Points display position
                 this.pointsX = 0;
                 this.pointsY = 0;
-                this.dragFactor = 0.1; // Controls how much the displays lag behind
                 
                 this.init();
             }
@@ -223,7 +207,6 @@
                 this.rocketMode = true;
                 this.textEditor.blur();
                 this.rocket.classList.remove('hidden');
-                this.timerDisplay.classList.remove('hidden');
                 this.pointsDisplay.classList.remove('hidden');
                 
                 this.health = 100;
@@ -239,17 +222,14 @@
                 this.continuousX = this.rocketX;
                 this.continuousY = this.rocketY;
                 
-                // Initialize display positions
-                this.timerX = this.rocketX;
-                this.timerY = this.rocketY - 40;
-                this.pointsX = this.rocketX + 30;
-                this.pointsY = this.rocketY - 20;
+                // Initialize display positions - superimpose points over rocket
+                this.pointsX = this.rocketX;
+                this.pointsY = this.rocketY;
             }
             
             deactivateRocketMode() {
                 this.rocketMode = false;
                 this.rocket.classList.add('hidden');
-                this.timerDisplay.classList.add('hidden');
                 this.pointsDisplay.classList.add('hidden');
                 this.stopGameLoop();
                 this.textEditor.focus();
@@ -504,23 +484,9 @@
                 this.rocket.style.top = `${this.rocketY - 10}px`;
                 this.rocket.style.transform = `rotate(${this.rocketAngle}deg)`;
                 
-                // Update display positions with drag effect
-                const targetTimerX = this.rocketX - 15; // Center timer over rocket
-                const targetTimerY = this.rocketY - 35; // Position above rocket
-                const targetPointsX = this.rocketX + 25; // Position to the right
-                const targetPointsY = this.rocketY - 15; // Position slightly above
-                
-                // Apply drag effect using interpolation
-                this.timerX += (targetTimerX - this.timerX) * this.dragFactor;
-                this.timerY += (targetTimerY - this.timerY) * this.dragFactor;
-                this.pointsX += (targetPointsX - this.pointsX) * this.dragFactor;
-                this.pointsY += (targetPointsY - this.pointsY) * this.dragFactor;
-                
-                // Update display positions
-                this.timerDisplay.style.left = `${this.timerX}px`;
-                this.timerDisplay.style.top = `${this.timerY}px`;
-                this.pointsDisplay.style.left = `${this.pointsX}px`;
-                this.pointsDisplay.style.top = `${this.pointsY}px`;
+                // Superimpose points display over rocket
+                this.pointsDisplay.style.left = `${this.rocketX - 10}px`;
+                this.pointsDisplay.style.top = `${this.rocketY - 10}px`;
             }
             
             
@@ -539,21 +505,19 @@
             }
             
             updateInfoPanel() {
-                document.getElementById('rocketPos').textContent = `${Math.round(this.rocketX)},${Math.round(this.rocketY)}`;
+                // Only update rocket position display when rocket is active
+                if (this.rocketMode) {
+                    document.getElementById('rocketPos').textContent = `${Math.round(this.rocketX)},${Math.round(this.rocketY)}`;
+                } else {
+                    document.getElementById('rocketPos').textContent = 'Inactive';
+                }
                 document.getElementById('rocketSpeed').textContent = this.rocketSpeed.toFixed(1);
                 document.getElementById('rocketAngle').textContent = `${this.rocketAngle}°`;
                 document.getElementById('healthDisplay').textContent = `${Math.round(this.health)}%`;
                 document.getElementById('pointsDisplay').textContent = this.points;
                 
-                // Update the floating displays
-                this.updateTimerDisplay();
+                // Update the floating points display
                 this.updatePointsDisplay();
-            }
-            
-            updateTimerDisplay() {
-                const minutes = Math.floor(this.safeFlightTime / 60000);
-                const seconds = Math.floor((this.safeFlightTime % 60000) / 1000);
-                this.timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             }
             
             updatePointsDisplay() {
@@ -566,7 +530,7 @@
         });
     </script>
     <div style="position: fixed; bottom: 10px; left: 10px; font-size: 10px; color: #999; font-family: Arial, sans-serif;">
-        Changes: Fixed clock positioning - rests above rocket on full stop, drags half-behind when coasting, further behind when accelerating, returns above when stopping
+        Changes: Removed clock, points now superimposed over rocket, fixed coordinate display when rocket inactive
     </div>
 </body>
 </html>
