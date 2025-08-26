@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rocket Text Game v2 - Health & Points</title>
+    <title>Rocketz</title>
     <style>
         body {
             margin: 0;
@@ -111,9 +111,6 @@
         
         .timer-display {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             font-family: 'Courier New', monospace;
             font-size: 24px;
             font-weight: bold;
@@ -121,7 +118,7 @@
             pointer-events: none;
             z-index: 15;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            transition: transform 0.1s ease-out;
+            transition: none;
         }
         
         .points-display {
@@ -133,13 +130,13 @@
             pointer-events: none;
             z-index: 12;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-            transition: all 0.2s ease-out;
+            transition: none;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>Rocket Text Game v2 - Health & Points</h1>
+        <h1>Rocketz</h1>
         <p>Click in the text area to activate rocket mode. Fly through spaces and tabs safely, avoid letters!</p>
         
         <div class="text-frame" id="gameFrame">
@@ -166,6 +163,8 @@
                 this.textEditor = document.getElementById('textEditor');
                 this.rocket = document.getElementById('rocket');
                 this.infoPanel = document.getElementById('infoPanel');
+                this.timerDisplay = document.getElementById('timerDisplay');
+                this.pointsDisplay = document.getElementById('pointsDisplay');
                 
                 this.rocketMode = false;
                 this.rocketX = 0;
@@ -189,6 +188,13 @@
                 
                 this.animationId = null;
                 this.blinkingTimeout = null;
+                
+                // Drag effect variables
+                this.timerX = 0;
+                this.timerY = 0;
+                this.pointsX = 0;
+                this.pointsY = 0;
+                this.dragFactor = 0.1; // Controls how much the displays lag behind
                 
                 this.init();
             }
@@ -217,6 +223,8 @@
                 this.rocketMode = true;
                 this.textEditor.blur();
                 this.rocket.classList.remove('hidden');
+                this.timerDisplay.classList.remove('hidden');
+                this.pointsDisplay.classList.remove('hidden');
                 
                 this.health = 100;
                 this.points = 0;
@@ -230,11 +238,19 @@
                 // Initialize continuous coordinates
                 this.continuousX = this.rocketX;
                 this.continuousY = this.rocketY;
+                
+                // Initialize display positions
+                this.timerX = this.rocketX;
+                this.timerY = this.rocketY - 40;
+                this.pointsX = this.rocketX + 30;
+                this.pointsY = this.rocketY - 20;
             }
             
             deactivateRocketMode() {
                 this.rocketMode = false;
                 this.rocket.classList.add('hidden');
+                this.timerDisplay.classList.add('hidden');
+                this.pointsDisplay.classList.add('hidden');
                 this.stopGameLoop();
                 this.textEditor.focus();
                 
@@ -487,6 +503,24 @@
                 this.rocket.style.left = `${this.rocketX - 10}px`;
                 this.rocket.style.top = `${this.rocketY - 10}px`;
                 this.rocket.style.transform = `rotate(${this.rocketAngle}deg)`;
+                
+                // Update display positions with drag effect
+                const targetTimerX = this.rocketX - 15; // Center timer over rocket
+                const targetTimerY = this.rocketY - 35; // Position above rocket
+                const targetPointsX = this.rocketX + 25; // Position to the right
+                const targetPointsY = this.rocketY - 15; // Position slightly above
+                
+                // Apply drag effect using interpolation
+                this.timerX += (targetTimerX - this.timerX) * this.dragFactor;
+                this.timerY += (targetTimerY - this.timerY) * this.dragFactor;
+                this.pointsX += (targetPointsX - this.pointsX) * this.dragFactor;
+                this.pointsY += (targetPointsY - this.pointsY) * this.dragFactor;
+                
+                // Update display positions
+                this.timerDisplay.style.left = `${this.timerX}px`;
+                this.timerDisplay.style.top = `${this.timerY}px`;
+                this.pointsDisplay.style.left = `${this.pointsX}px`;
+                this.pointsDisplay.style.top = `${this.pointsY}px`;
             }
             
             
@@ -510,6 +544,20 @@
                 document.getElementById('rocketAngle').textContent = `${this.rocketAngle}°`;
                 document.getElementById('healthDisplay').textContent = `${Math.round(this.health)}%`;
                 document.getElementById('pointsDisplay').textContent = this.points;
+                
+                // Update the floating displays
+                this.updateTimerDisplay();
+                this.updatePointsDisplay();
+            }
+            
+            updateTimerDisplay() {
+                const minutes = Math.floor(this.safeFlightTime / 60000);
+                const seconds = Math.floor((this.safeFlightTime % 60000) / 1000);
+                this.timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            updatePointsDisplay() {
+                this.pointsDisplay.textContent = `${this.points}`;
             }
         }
         
